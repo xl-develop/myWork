@@ -1,0 +1,5 @@
+".\Objects\menu.obj",
+".\Objects\12864.obj",
+".\Objects\snake.obj" 
+TO ".\Objects\Index" 
+PRINT(".\Listings\Index.m51")

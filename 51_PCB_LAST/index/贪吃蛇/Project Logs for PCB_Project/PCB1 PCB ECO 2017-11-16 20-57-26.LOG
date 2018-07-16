@@ -1,0 +1,11 @@
+Change Component Footprint: Designator=lcd2 Old Footprint=led2 - duplicate New Footprint=led1
+Added Component: Designator=csdyd1(2kong)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "LatestRevisionDate"; Value = "08-Jul-2005"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "LatestRevisionNote"; Value = "Mech Layer 1 removed."; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageReference"; Value = "LED-0"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "8-Jun-2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Limited"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=Netcsdyd1_1 Pin=csdyd1-1
+Added Pin To Net: NetName=gnd Pin=csdyd1-2
+Added Member To Class: ClassName=Sheet1 Member=Component csdyd1 LED

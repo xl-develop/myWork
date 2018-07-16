@@ -1,0 +1,541 @@
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE SNAKE
+OBJECT MODULE PLACED IN .\Objects\snake.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE snake.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\sna
+                    -ke.lst) TABS(2) OBJECT(.\Objects\snake.obj)
+
+line level    source
+
+   1          #include <12864.h>
+   2          #include <snake_resource.h>
+   3          #define num 7
+   4          
+   5          //用来描述蛇在液晶上面一个点的结构体
+   6          struct she
+   7          {
+   8            unsigned char x,y;
+   9            unsigned int value;
+  10            unsigned char direction;  
+  11          };
+  12          
+  13          struct loop_queue  //利用数组实现循环队列，拐点不会超过15个。所以大小选15足以。
+  14          {    
+  15            unsigned int front;
+  16            unsigned int rear;
+  17            unsigned int count;
+  18            struct she dat[num];
+  19          };
+  20          //不熟悉数组实现循环队列的可以在纸上画一下操作过程
+  21          
+  22          struct she tou,wei,food; //蛇的头尾节点  和食物点 
+  23          struct loop_queue queue;//循环队列  蛇转弯则形成拐点 将拐点入队列  尾巴到达拐点则拐点出队列 
+  24          
+  25          unsigned char flag_exit_game; //返回标志  为1时  从贪吃蛇游戏返回菜单
+  26          unsigned char flag_game_over; //结束标志  为1时  显示游戏结束画面 同时使返回标志为1
+  27          unsigned char tcs_key_flag;  //贪吃蛇在一次移动中   只允许捕获一次按键  也就是只能产生一个拐点
+  28          unsigned char tcs_key_state; //用于按键状态机的实现
+  29          unsigned int  tcs_df;  //贪吃蛇得分
+  30          unsigned char tcs_stop;//贪吃蛇暂定功能的实现
+  31          
+  32          unsigned char tcs_nd=2;  //贪吃蛇难度的选择
+  33          unsigned char tcs_dt;  //贪吃蛇地图的选择 这2个是全局变量  在menu里面要用到 
+  34          
+  35          
+  36          void tcs_bianjie(unsigned int he);//贪吃蛇游戏地图的实现和边界
+  37          void timer0_initial();
+  38          void timer1_initial();
+  39          
+  40          //循环队列的基本操作
+  41          void queue_initial(struct loop_queue *q);  
+  42          void queue_in(struct loop_queue *q,struct she h)  ;
+  43          struct she queue_out(struct loop_queue *q)  ;
+  44          
+  45          void tcs_game_initial();
+  46          void food_produce();
+  47          
+  48          void tcs_game()
+  49          {
+  50   1        struct she check;  //用与暂存蛇即将移动的点  从而进行判断
+  51   1        unsigned int he;
+  52   1        unsigned char flag;//flag作为吃到食物的标志
+  53   1      
+  54   1        flag_exit_game=0; 
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 2   
+
+  55   1        flag_game_over=0;
+  56   1        tcs_key_state=0;
+  57   1        tcs_df=0;
+  58   1        tcs_stop=1;
+  59   1      
+  60   1      //  draw_lcd_picture(&tcs_picture[0]); //贪吃蛇游戏画面
+  61   1      //  delay_ms(2000);
+  62   1      
+  63   1        tcs_bianjie(tcs_dt); //贪吃蛇游戏边界
+  64   1        tcs_game_initial();//贪吃蛇初始化  主要是设定蛇头蛇尾  并显示蛇
+  65   1        timer0_initial(); //定时器0工作在方式2  8位自动装初值  只计数不中断 用来产生随机数
+  66   1        timer1_initial(); //定时器1工作在方式1  16位     10ms中断一次扫描键盘
+  67   1      
+  68   1        do
+  69   1        {
+  70   2          food_produce();//产生一个随机数 即随即产生x y value3个值确定一个点为食物
+  71   2          he=test_point_exist(food.x,food.y,food.value);//检测产生的点的地方是否已经有点存在
+  72   2        }
+  73   1        while(he==food.value);//如果随机数产生在蛇的身体以及边界上 则重新再产生一个  
+  74   1        draw_lcd_point(food.x,food.y,food.value);//显示食物 先读取这个点所在xy的情况 以免破坏现场
+  75   1        
+  76   1        queue_initial(&queue);//初始化循环队列  使队列空  front rear 即头尾指针为0
+  77   1      
+  78   1        while(1)
+  79   1        {
+  80   2          if(flag_exit_game==1)//如果游戏过程中按下返回键  则立即结束游戏  返回菜单
+  81   2            break;
+  82   2          if(flag_game_over==1)//如果游戏过程中蛇死了  则立即结束游戏 显示结束动画 按键后返回菜单
+  83   2            break;
+  84   2          
+  85   2          ET1=1;   //允许扫描按键   贪吃蛇游戏难度决定蛇2次移动之间的间隔时间  也就是检测按键的时间
+  86   2          tcs_key_flag=0; //允许捕获按键  在检测按键时间内  只允许生产一个拐点  即捕获到一个有效的
+  87   2                  //按键以后  就置一这个变量 不允许再增加拐点
+  88   2          while(tcs_stop==0);//暂定键按下会取反tcs_stop的值  从而实现暂停功能
+  89   2          switch(tcs_nd)
+  90   2          {
+  91   3            case 0:  {delay_ms(50); break;}//0代表变态难度  蛇的2次移动之间只有10ms的机会检测键盘按下
+  92   3            case 1:  {delay_ms(100); break;}//难度减小  2次移动间隔增加
+  93   3            case 2:  {delay_ms(150); break;}
+  94   3          }
+  95   2          ET1=0; 
+  96   2      
+  97   2          switch(tou.direction)//这个switch用来根据蛇头的x y value值以及当前蛇头移动的方向 
+  98   2                     //取出蛇头要到达的下一个点  存入check中  来判断是否撞墙 吃到食物 什么的···
+  99   2          { 
+ 100   3            case 0: {   
+ 101   4                  check.y=tou.y; 
+ 102   4                  if(tou.value==0x0001)//x的值要发生改变
+ 103   4                  {
+ 104   5                    if(tou.x==3)//蛇碰到上屏幕的右边界  则回到左边界 
+ 105   5                      check.x=0;
+ 106   5                    else if(tou.x==11)//蛇碰到下屏幕的右边界  则回到左边界
+ 107   5                      check.x=8;
+ 108   5                    else
+ 109   5                      check.x=tou.x+1;
+ 110   5                    check.value=0x8000;
+ 111   5                  }
+ 112   4                  else
+ 113   4                  {
+ 114   5                    check.x=tou.x;
+ 115   5                    check.value=tou.value>>1;
+ 116   5                  }
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 3   
+
+ 117   4                   break ;
+ 118   4                }//->向右y不变 
+ 119   3      
+ 120   3            case 1: {//向下value值不变           
+ 121   4                  check.value=tou.value;
+ 122   4                  if(tou.y==31) //蛇头从在上下屏之间移动
+ 123   4                  {
+ 124   5                    if(tou.x<=3)//蛇头从上屏移动到下屏
+ 125   5                      check.x=tou.x+8;
+ 126   5                    else    //蛇头从下屏移动到上屏
+ 127   5                      check.x=tou.x-8;
+ 128   5                    check.y=0;
+ 129   5                  }
+ 130   4                  else
+ 131   4                  {
+ 132   5                    check.y=tou.y+1;
+ 133   5                    check.x=tou.x;  //蛇头的x值不变
+ 134   5                    }
+ 135   4                  break ;
+ 136   4                }
+ 137   3      
+ 138   3            case 2: {//<-向左y不变  
+ 139   4                  check.y=tou.y; 
+ 140   4                  if(tou.value==0x8000)//x的值要发生改变
+ 141   4                  {
+ 142   5                    if(tou.x==0)//蛇碰到上屏幕的左边界  则回到右边界 
+ 143   5                      check.x=3;
+ 144   5                    else if(tou.x==8)//蛇碰到下屏幕的左边界  则回到右边界
+ 145   5                      check.x=11;
+ 146   5                    else
+ 147   5                      check.x=tou.x-1;
+ 148   5                    check.value=0x0001;
+ 149   5                  }
+ 150   4                  else
+ 151   4                  {
+ 152   5                    check.x=tou.x;
+ 153   5                    check.value=tou.value<<1;
+ 154   5                  }
+ 155   4                   break ;
+ 156   4                }
+ 157   3      
+ 158   3            case 3: { //↑   向上value不变
+ 159   4                  check.value=tou.value;
+ 160   4                  if(tou.y==0) //蛇头从在上下屏之间移动
+ 161   4                  {
+ 162   5                    if(tou.x<=3)//蛇头从上屏移动到下屏
+ 163   5                      check.x=tou.x+8;
+ 164   5                    else    //蛇头从下屏移动到上屏
+ 165   5                      check.x=tou.x-8;
+ 166   5                    check.y=31;
+ 167   5                  }
+ 168   4                  else
+ 169   4                  {
+ 170   5                    check.y=tou.y-1;
+ 171   5                    check.x=tou.x;  //蛇头的x值不变
+ 172   5                    }
+ 173   4                  break ;
+ 174   4                } 
+ 175   3          }     
+ 176   2          flag=0;//初始化吃到食物标志  表示没有吃到 
+ 177   2          he=test_point_exist(check.x,check.y,check.value); // 检测蛇头移动的下一个点是否几经有点存在
+ 178   2          if(he==check.value) //如果前面的点已经存在  则可以是食物 或者是墙和蛇身
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 4   
+
+ 179   2          {
+ 180   3            if( (check.x==food.x) && (check.y==food.y) && (check.value==food.value) )//吃到食物
+ 181   3            {
+ 182   4              flag=1;//吃到食物
+ 183   4              tcs_df++;
+ 184   4              write_lcd_shuzi(5,16,tcs_shuzi[tcs_df/100]       );       //显示分数的百位
+ 185   4              write_lcd_shuzi(6,16,tcs_shuzi[ (tcs_df%100)/10] );       //      十
+ 186   4              write_lcd_shuzi(7,16,tcs_shuzi[tcs_df%10]        );       //          个
+ 187   4            
+ 188   4              food.direction=tou.direction;//食物本没有方向 但是为了下面的语句
+ 189   4              tou=food; //食物就成了蛇头···蛇头的方向依然不变
+ 190   4               
+ 191   4              do
+ 192   4              {
+ 193   5                food_produce();
+ 194   5                he=test_point_exist(food.x,food.y,food.value);
+ 195   5              }
+ 196   4              while(he==food.value);  
+ 197   4              draw_lcd_point(food.x,food.y,food.value);//上面有说过  这个是产生并显示食物
+ 198   4            }
+ 199   3            else//撞到身体或者墙
+ 200   3            {
+ 201   4              flag_game_over=1; // 游戏结束
+ 202   4            }
+ 203   3          }
+ 204   2          else  //什么都么有遇到 继续前进
+ 205   2          {
+ 206   3            check.direction=tou.direction;//这么做的理由同上 为了保持蛇头当前的移动方向
+ 207   3            tou=check;
+ 208   3            draw_lcd_point(tou.x,tou.y,tou.value);//画出此时的蛇头
+ 209   3          }
+ 210   2      
+ 211   2          //下面是对尾巴的操作    
+ 212   2          
+ 213   2          if(flag==1)//如果吃到食物 直接结束此轮循环 尾巴不做任何操作
+ 214   2          {
+ 215   3          
+ 216   3          }
+ 217   2          else
+ 218   2          {
+ 219   3            if (  (wei.x == queue.dat[queue.front].x) && ( wei.y==queue.dat[queue.front].y ) && ( wei.value== queue
+             -.dat[queue.front].value)  ) //如果尾巴到达拐点
+ 220   3            {
+ 221   4              check=queue_out(&queue);  
+ 222   4              wei.direction=check.direction; //尾巴按照拐点指示的方向走
+ 223   4            }
+ 224   3            else //如果没有到达拐点 尾巴移动的方向不变
+ 225   3            {
+ 226   4                
+ 227   4            }           
+ 228   3                        
+ 229   3            switch( wei.direction ) //这个是尾巴的移动  以及尾巴节点数据的修改
+ 230   3            {
+ 231   4              case 0: {//->向右y不变  
+ 232   5                    clear_lcd_point(wei.x,wei.y,wei.value);
+ 233   5                    if(wei.value==0x0001)//x的值要发生改变
+ 234   5                    {
+ 235   6                      if(wei.x==3)//蛇碰到上屏幕的右边界  则回到左边界 
+ 236   6                        wei.x=0;
+ 237   6                      else if(wei.x==11)//蛇碰到下屏幕的右边界  则回到左边界
+ 238   6                        wei.x=8;
+ 239   6                      else
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 5   
+
+ 240   6                        wei.x=wei.x+1;
+ 241   6                      wei.value=0x8000;
+ 242   6                    }
+ 243   5                    else
+ 244   5                    {
+ 245   6                      wei.value=wei.value>>1;
+ 246   6                    }
+ 247   5                    break;
+ 248   5                  }
+ 249   4              case 1: {//向下value值不变  
+ 250   5                    clear_lcd_point(wei.x,wei.y,wei.value);
+ 251   5                    if(wei.y==31) //蛇从在上下屏之间移动
+ 252   5                    {
+ 253   6                      if(wei.x<=3)//蛇从上屏移动到下屏
+ 254   6                        wei.x=wei.x+8;
+ 255   6                      else    //蛇从下屏移动到上屏
+ 256   6                        wei.x=wei.x-8;
+ 257   6                      wei.y=0;
+ 258   6                    }
+ 259   5                    else
+ 260   5                    {
+ 261   6                      wei.y=wei.y+1;
+ 262   6                      }
+ 263   5                    break ;
+ 264   5                    
+ 265   5                     }                    
+ 266   4              case 2: {//<-向左y不变   
+ 267   5                    clear_lcd_point(wei.x,wei.y,wei.value);
+ 268   5                    if(wei.value==0x8000)//x的值要发生改变
+ 269   5                    {
+ 270   6                      if(wei.x==0)//蛇碰到上屏幕的左边界  则回到右边界 
+ 271   6                        wei.x=3;
+ 272   6                      else if(wei.x==8)//蛇碰到下屏幕的左边界  则回到右边界
+ 273   6                        wei.x=11;
+ 274   6                      else
+ 275   6                        wei.x=wei.x-1;
+ 276   6                      wei.value=0x0001;
+ 277   6                    }
+ 278   5                    else
+ 279   5                    {
+ 280   6                      wei.value=wei.value<<1;
+ 281   6                    }
+ 282   5                    break;
+ 283   5                   }
+ 284   4              case 3: {//↑  向上value不变  
+ 285   5                    clear_lcd_point(wei.x,wei.y,wei.value); 
+ 286   5                    if(wei.y==0) //蛇从在上下屏之间移动
+ 287   5                    {
+ 288   6                      if(wei.x<=3)//蛇从上屏移动到下屏
+ 289   6                        wei.x=wei.x+8;
+ 290   6                      else    //蛇从下屏移动到上屏
+ 291   6                        wei.x=wei.x-8;
+ 292   6                      wei.y=31;
+ 293   6                    }
+ 294   5                    else
+ 295   5                    {
+ 296   6                      wei.y=wei.y-1;
+ 297   6                       }
+ 298   5                    break;
+ 299   5                   }  
+ 300   4              }
+ 301   3          }             
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 6   
+
+ 302   2        } 
+ 303   1        TR0=0;
+ 304   1        TR1=0;
+ 305   1        ET1=0;  //退出游戏时 关闭游戏过程中用到的定时器0和1  然后定时器中断也要关闭
+ 306   1      
+ 307   1      
+ 308   1      }
+ 309          
+ 310          //状态机实现按键   参考里面资料别人的技术贴
+ 311          void timer1() interrupt 3
+ 312          { 
+ 313   1        unsigned char tou_last_direction; //记录蛇头原来的移动方向
+ 314   1        
+ 315   1        TR1=0;
+ 316   1        TH1=0xDC;   
+ 317   1        TL1=0x00;
+ 318   1      
+ 319   1        switch (tcs_key_state)
+ 320   1        {
+ 321   2          case 0: {   // 按键初始态
+ 322   3                if ( (P2 & 0xfe) != 0xfe )   tcs_key_state = 1; // 键被按下，状态转换到键确认态
+ 323   3                  else    tcs_key_state = 0;
+ 324   3                break;
+ 325   3              }
+ 326   2        
+ 327   2          case 1: {     // 按键确认态
+ 328   3                if ( (P2 & 0xfe) != 0xfe)
+ 329   3                {
+ 330   4                  // 按键仍按下，此时确定记录一次有效按键
+ 331   4                    tcs_key_state = 2;  // 状态转换到键释放态
+ 332   4                    if(tcs_key_flag==0 )   //如果此时允许捕获按键
+ 333   4                    {
+ 334   5                      tou_last_direction=tou.direction;
+ 335   5                      if(tcs_stop == 1)
+ 336   5                      {
+ 337   6                        switch(P2 & 0xfe)
+ 338   6                        { 
+ 339   7                          case 0xfc:  break; // 确定键  不进行任何操作
+ 340   7                          case 0xfa:  {  flag_exit_game=1;   break; }//返回键    结束游戏 返回菜单
+ 341   7                          case 0xbe:  {  tou.direction=3;break; }//↑
+ 342   7                          case 0xee:  {  tou.direction=2;break; }//←
+ 343   7                          case 0xde:  {  tou.direction=1;break; }//↓
+ 344   7                          case 0x7e:  {  tou.direction=0;break; }//->  
+ 345   7                          case 0xf6:  {  if(tcs_stop==0) tcs_stop=1; else tcs_stop=0; break;}//暂停键
+ 346   7                        }
+ 347   6                  
+ 348   6                        if( (tou.direction==tou_last_direction) || (tou.direction+tou_last_direction==2) || (tou.directio
+             -n+tou_last_direction==4) )
+ 349   6                        //如果本来就是按此方向移动   或者按键给的方向与蛇移动方向相反 则不做任何操作 此次按键无效
+ 350   6                        {
+ 351   7                          tou.direction=tou_last_direction; //   还原蛇头的移动方向
+ 352   7                        }
+ 353   6                        else //否则记录此头结点成为拐点           
+ 354   6                        {     
+ 355   7                          queue_in(&queue,tou);
+ 356   7                          tcs_key_flag=1; //已经捕获到一次按键信息 这次移动拐点已经产生 关闭捕获键盘 
+ 357   7                        }
+ 358   6                      }
+ 359   5                      else
+ 360   5                      {
+ 361   6                        if((P2 & 0xfe) == 0xf6) tcs_stop = 1;
+ 362   6                      }
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 7   
+
+ 363   5                    }
+ 364   4      
+ 365   4                }
+ 366   3                else
+ 367   3                {
+ 368   4                  tcs_key_state = 0;  // 按键已抬起，转换到按键初始态
+ 369   4                  break;
+ 370   4                }
+ 371   3              }
+ 372   2      
+ 373   2          case 2: {           //等待按键弹起状态
+ 374   3                  if ( (P2 & 0xfe) == 0xfe) tcs_key_state=0;  //按键已释放，转换到按键初始态
+ 375   3                  else    tcs_key_state = 2;
+ 376   3                  break;
+ 377   3              } 
+ 378   2        }     
+ 379   1        TR1=1;
+ 380   1      }
+ 381          
+ 382          void tcs_bianjie(unsigned int he)
+ 383          {
+ 384   1        unsigned char i,j;
+ 385   1        clear_lcd();
+ 386   1        for(i=0;i<=31;i++)
+ 387   1          for(j=0;j<=3;j++)
+ 388   1          {
+ 389   2            set_lcd_xy(j,i);
+ 390   2            write_lcd_dat(tcs_map[he][i*8+j*2]); 
+ 391   2            write_lcd_dat(tcs_map[he][i*8+j*2+1]);
+ 392   2          }
+ 393   1        for(i=0;i<=31;i++)
+ 394   1          for(j=8;j<=11;j++)
+ 395   1          {
+ 396   2            set_lcd_xy(j,i);
+ 397   2            write_lcd_dat(tcs_map[he][256+i*8+(j-8)*2]);
+ 398   2            write_lcd_dat(tcs_map[he][256+i*8+(j-8)*2+1]);
+ 399   2          }
+ 400   1        //到这里是画地图  
+ 401   1      
+ 402   1        write_lcd_hanzi(4,0,df[0]);
+ 403   1        write_lcd_hanzi(5,0,df[1]);
+ 404   1      
+ 405   1        write_lcd_shuzi(5,16,tcs_shuzi[tcs_df/100]       );       //显示分数的百位
+ 406   1        write_lcd_shuzi(6,16,tcs_shuzi[ (tcs_df%100)/10] );       //      十
+ 407   1        write_lcd_shuzi(7,16,tcs_shuzi[tcs_df%10]        );       //          个
+ 408   1      
+ 409   1      
+ 410   1        write_lcd_hanzi(12,0,jb[0]);
+ 411   1        write_lcd_hanzi(13,0,jb[1]);
+ 412   1      
+ 413   1        switch(tcs_nd)
+ 414   1        { 
+ 415   2          case 0 :  { write_lcd_hanzi(14,16,tcs_bt[0]); write_lcd_hanzi(15,16,tcs_bt[1]);  break;}
+ 416   2          case 1 :  { write_lcd_hanzi(14,16,tcs_kn[0]); write_lcd_hanzi(15,16,tcs_kn[1]);  break;}
+ 417   2          case 2 :  { write_lcd_hanzi(14,16,tcs_jd[0]); write_lcd_hanzi(15,16,tcs_jd[1]);  break;}
+ 418   2        }
+ 419   1      }
+ 420          void timer0_initial()
+ 421          {   
+ 422   1        TMOD=(0xf0 & TMOD) | 0x01; //定时器0 8位自动装初值(TH0->TL0)定时器模式   用来产生随机数
+ 423   1        TH0=0x00;
+ 424   1        TL0=0x00;
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 8   
+
+ 425   1        TR0=1;   
+ 426   1      }
+ 427          
+ 428          void timer1_initial()
+ 429          {   
+ 430   1        EA=1;
+ 431   1        TMOD= (0x0f & TMOD) | 0x10 ; //定时器一16位定时器模式   10ms中断一次  用来扫描键盘
+ 432   1        TH1=0xDC;//10ms中断一次
+ 433   1        TL1=0x00;
+ 434   1        TR1=1;   
+ 435   1      }
+ 436          
+ 437          void queue_initial(struct loop_queue *q)   
+ 438          {   
+ 439   1          struct she check;
+ 440   1        unsigned int i;
+ 441   1        q->front =q->rear=0;   
+ 442   1          q->count = 0;
+ 443   1        check.x=0;
+ 444   1        check.y=0;
+ 445   1        check.value=0;
+ 446   1        check.direction=0;
+ 447   1        for(i=0;i<num;i++)
+ 448   1          queue.dat[i]=check;   
+ 449   1      }   
+ 450          
+ 451          void queue_in(struct loop_queue *q,struct she h)  
+ 452          {   
+ 453   1              q->dat[q->rear] = h;   
+ 454   1              q->rear = (q->rear + 1) % num;   
+ 455   1              q->count = q->count + 1;   
+ 456   1      }   
+ 457            
+ 458          struct she queue_out(struct loop_queue *q)   
+ 459          {   
+ 460   1              struct she he;
+ 461   1          he = q->dat[q->front];   
+ 462   1              q->front = (q->front + 1) % num;   
+ 463   1              q->count = q->count - 1;
+ 464   1          return (he);   
+ 465   1      }  
+ 466          
+ 467          void tcs_game_initial()
+ 468          {
+ 469   1        unsigned char he;
+ 470   1        tou.x=0;
+ 471   1        tou.y=5;
+ 472   1        tou.value=0x0001;      //初始化蛇头
+ 473   1        tou.direction=0;    // 初始化蛇头移动方向为向右 
+ 474   1      
+ 475   1        wei.x=0;
+ 476   1        wei.y=5;
+ 477   1        wei.value=0x0080;   //初始化蛇尾
+ 478   1        wei.direction=0;
+ 479   1        
+ 480   1        set_lcd_xy(0,5);
+ 481   1        he=read_lcd_dat();
+ 482   1        he=read_lcd_dat();
+ 483   1        set_lcd_xy(0,5);
+ 484   1        write_lcd_dat(he);
+ 485   1        write_lcd_dat(0xff);
+ 486   1      }
+C51 COMPILER V9.56.0.0   SNAKE                                                             12/22/2017 14:00:41 PAGE 9   
+
+ 487          
+ 488          void food_produce()
+ 489          {
+ 490   1        unsigned char code a[16]={0x0001,0x0002,0x0004,0x0008,  0x0010,0x0020,0x0040,0x0080,  0x0100,0x0200,0x0400,
+             -0x0800,  0x1000,0x2000,0x4000,0x8000};
+ 491   1        unsigned char code b[16]={0,1,2,3,8,9,10,11,0,1,2,3,8,9,10,11};
+ 492   1              
+ 493   1        food.x=b[ TL0 & 0x0f];  //取TL0的低四位 用0-15的数确定食物的x值
+ 494   1        food.y= (TL0 & 0x0f) + (TL0 & 0xf0)>>4 + 1;// 用0-31的数确定食物的y值
+ 495   1        food.value=a[TL0 & 0x0f]; //用0-15的数   在数组中找出value的值
+ 496   1      }
+ 497          
+ 498          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2272    ----
+   CONSTANT SIZE    =   1536    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     65      37
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

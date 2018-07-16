@@ -1,0 +1,3 @@
+Removed Pin From Net: NetName=gnd Pin=Q?-1
+Added Pin To Net: NetName=3.4 Pin=89c52-14
+Added Net: Name=3.4

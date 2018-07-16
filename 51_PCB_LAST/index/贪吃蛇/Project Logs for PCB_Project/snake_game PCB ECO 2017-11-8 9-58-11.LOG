@@ -1,0 +1,14 @@
+Removed Pin From Net: NetName=NetC7_2 Pin=Y1-1
+Removed Pin From Net: NetName=NetC6_2 Pin=Y1-2
+Added Component: Designator=Y1(R38)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "LatestRevisionDate"; Value = "17-Jul-2002"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "LatestRevisionNote"; Value = "Re-released for DXP Platform."; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageDescription"; Value = "Crystal, Thru-Hole; 2 Leads; Body 3.1 x 8.2 mm (Dia.xH)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PackageReference"; Value = "R38"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Published"; Value = "8-Jun-2000"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Publisher"; Value = "Altium Limited"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=NetC6_2 Pin=U2-17
+Added Pin To Net: NetName=NetC7_2 Pin=Y1-1
+Added Pin To Net: NetName=NetC6_2 Pin=Y1-2
+Added Room: Name=Sheet1

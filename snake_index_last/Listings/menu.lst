@@ -1,0 +1,305 @@
+C51 COMPILER V9.56.0.0   MENU                                                              12/22/2017 14:00:41 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE MENU
+OBJECT MODULE PLACED IN .\Objects\menu.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE menu.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\menu
+                    -.lst) TABS(2) OBJECT(.\Objects\menu.obj)
+
+line level    source
+
+   1          #include<12864.h>
+   2          #include<resource.h>
+   3          
+   4          struct menu_index   //菜单指针
+   5          {
+   6            unsigned char up_num;         //向上
+   7            unsigned char down_num;       //向下
+   8            unsigned char confirm_num;    //确定
+   9            unsigned char cansel_num;     //返回
+  10          };
+  11          
+  12          
+  13          struct menu_index code menu_num[11]=
+  14          {
+  15                        //第一层菜单
+  16            {2,1,3,0},    //0：开始游戏
+  17            {0,2,4,0},    //1：选择地图
+  18            {1,0,8,0},    //2：选择困难
+  19          
+  20                        //进入游戏
+  21            {0,0,0,0},    //3：进入游戏
+  22                      
+  23                        
+  24            {5,5,4,1},    //4：无地图
+  25            {4,4,5,1},    //5：地图壹
+  26            //地图3 4 未用
+  27            {5,7,6,1},    //6：地图贰
+  28            {6,4,7,1},    //7：地图叁
+  29                      
+  30                        //选择难度
+  31            {10,9,8,2},   //8：变态
+  32            {8,10,9,2},   //9：困难
+  33            {9,8,10,2},   //10：简单
+  34            
+  35          };
+  36          
+  37          
+  38          unsigned char present_menu_num;       //菜单的初始化
+  39          extern unsigned char flag_exit_game;  //返回标志  为1时  从贪吃蛇游戏返回菜单
+  40          extern unsigned char tcs_nd;          //贪吃蛇难度的选择
+  41          extern unsigned char tcs_dt;          //贪吃蛇地图的选择 这2个是全局变量 
+  42          
+  43          
+  44          void menu_change(unsigned char he); //这个函数用来执行当前菜单号指示的菜单需要进行的操作
+  45          void menu1();
+  46          void menu2();
+  47          void menu3();
+  48          
+  49          void choose(unsigned char n); //选中的动画
+  50          void shadow(unsigned char n); //液晶的反白显示
+  51          
+  52          void key_down();    //键盘
+  53          void tcs_game();    //游戏
+  54          void game_over();   //游戏结束
+C51 COMPILER V9.56.0.0   MENU                                                              12/22/2017 14:00:41 PAGE 2   
+
+  55          
+  56          
+  57          
+  58          void main()
+  59          {
+  60   1        initial_lcd();  //初始化
+  61   1      
+  62   1        clear_lcd();    //清屏
+  63   1        
+  64   1        present_menu_num = 0;
+  65   1        menu_change(present_menu_num);//显示菜单
+  66   1      
+  67   1        while(1)
+  68   1        {
+  69   2          key_down(); 
+  70   2        }
+  71   1        
+  72   1      }
+  73          
+  74          
+  75          
+  76          void menu_change(unsigned char he)
+  77          {
+  78   1        switch(he)
+  79   1        {
+  80   2          case 0 : { menu1();  shadow(0); break; }
+  81   2          case 1 : { menu1();  shadow(1); break; }
+  82   2          case 2 : { menu1();  shadow(2); break; }//0-2为第二层菜单
+  83   2                                       
+  84   2          case 3 : {
+  85   3                      tcs_game();
+  86   3                      if(flag_exit_game == 1)
+  87   3                      {
+  88   4                        present_menu_num = 0;
+  89   4                        menu1();  shadow(0);
+  90   4                        break;
+  91   4                      }  
+  92   3                      else
+  93   3                      { 
+  94   4                        game_over();
+  95   4                        break;
+  96   4                      }
+  97   3                    }
+  98   2          case 4 :  { menu2();  choose(0); tcs_dt = 0; break; }
+  99   2          case 5 :  { menu2();  choose(1); tcs_dt = 1; break; }
+ 100   2        //  case 6 :  { menu2();  choose(2); tcs_dt = 2; break; }
+ 101   2          //case 7 :  { menu2();  choose(3); tcs_dt = 3; break; }    //4—7为选择贪吃蛇的地图
+ 102   2      
+ 103   2          case 8  :  { menu3();  choose(0); tcs_nd = 0; break; }
+ 104   2          case 9  :  { menu3();  choose(1); tcs_nd = 1; break; }
+ 105   2          case 10 :  { menu3();  choose(2); tcs_nd = 2; break; }   //8-9为选择贪吃蛇的难度
+ 106   2            
+ 107   2        }
+ 108   1      }
+ 109          
+ 110          
+ 111          
+ 112          void menu1()
+ 113          {
+ 114   1        unsigned int i;
+ 115   1        clear_lcd();
+ 116   1        for(i=0;i<16;i++)
+C51 COMPILER V9.56.0.0   MENU                                                              12/22/2017 14:00:41 PAGE 3   
+
+ 117   1        {
+ 118   2          if(i<4)   write_lcd_hanzi(i,0,&ksyx[i][0]);
+ 119   2          if(i<4)   write_lcd_hanzi(i,16,&xzdt[i][0]);
+ 120   2          if( (i>=8) && (i<=11) )   write_lcd_hanzi(i,0,&xznd[i-8][0]);
+ 121   2        }
+ 122   1      }
+ 123          
+ 124          
+ 125          void menu2()
+ 126          {
+ 127   1        unsigned int i;
+ 128   1        clear_lcd();
+ 129   1        for(i=0;i<16;i++)
+ 130   1        {
+ 131   2          if( (i>=1) && (i<=3)  )   write_lcd_hanzi(i,0,&wdt[i-1][0]);
+ 132   2          if( (i>=1) && (i<=3)  )   write_lcd_hanzi(i,16,&dty[i-1][0]);
+ 133   2      //    if( (i>=9) && (i<=11) )   write_lcd_hanzi(i,0,&dte[i-9][0]);
+ 134   2      //    if( (i>=9) && (i<=11) )   write_lcd_hanzi(i,16,&dts[i-9][0]);
+ 135   2        }
+ 136   1      }
+ 137          
+ 138          
+ 139          void menu3()
+ 140          {
+ 141   1        unsigned int i;
+ 142   1        clear_lcd();
+ 143   1        for(i=0;i<16;i++)
+ 144   1        {
+ 145   2          if( (i>=2) && (i<=3)  )   write_lcd_hanzi(i,0,&bt[i-2][0]);
+ 146   2          if( (i>=2) && (i<=3)  )   write_lcd_hanzi(i,16,&kn[i-2][0]);
+ 147   2          if( (i>=10) && (i<=11) )    write_lcd_hanzi(i,0,&jd[i-10][0]);
+ 148   2        }
+ 149   1      }
+ 150          
+ 151          
+ 152          
+ 153          //传参数 0 1 2 3 分别用来选中 1  2 3 4行 并有对勾的动画
+ 154          void choose(unsigned char n)
+ 155          {
+ 156   1        unsigned char i,j,hui1,hui2;
+ 157   1        unsigned char x,y;
+ 158   1        unsigned int code he[16]={0x8000,0xc0000,0xe000,0xf000, 0xf800,0xfc00,0xfe00,0xff00,  0xff80,0xffc0,0xffe0
+             -,0xfff0,  0xfff8,0xfffc,0xfffe,0xffff};
+ 159   1        switch(n)
+ 160   1        {
+ 161   2          case 0: {y=0;x=4;break;}
+ 162   2          case 1: {y=16;x=4;break;}
+ 163   2          case 2: {y=0;x=12;break;}
+ 164   2          case 3: {y=16;x=12;break;}
+ 165   2        }
+ 166   1        write_lcd_hanzi(x-4,y,&jt[0]);
+ 167   1        for(i=0;i<=15;i++)
+ 168   1        {
+ 169   2          delay_ms(20);
+ 170   2          hui1=he[i]>>8;
+ 171   2          hui2=he[i];
+ 172   2          for(j=y;j<=y+15;j++)
+ 173   2          {
+ 174   3            set_lcd_xy(x,j);
+ 175   3            write_lcd_dat(  (dg[(j-y)*2])&(hui1)  );
+ 176   3            write_lcd_dat(  (dg[(j-y)*2+1])&(hui2)  );
+ 177   3          }
+C51 COMPILER V9.56.0.0   MENU                                                              12/22/2017 14:00:41 PAGE 4   
+
+ 178   2        }
+ 179   1      }
+ 180          
+ 181          
+ 182          //传参数 0 1 2 3   分别用来反白显示 1 2 3 4 行
+ 183          void shadow(unsigned char n)
+ 184          {
+ 185   1        unsigned char he,hui,i,j;
+ 186   1        unsigned char x,y;
+ 187   1        switch(n)
+ 188   1        {
+ 189   2          case 0: {y=0;x=0;break;}
+ 190   2          case 1: {y=1;x=0;break;}
+ 191   2          case 2: {y=0;x=1;break;}
+ 192   2          case 3: {y=1;x=1;break;}
+ 193   2        } 
+ 194   1        for(i=0+y*16;i<=15+y*16;i++)  
+ 195   1          for(j=0+x*8;j<=7+x*8;j++)
+ 196   1          {
+ 197   2            set_lcd_xy(j,i);
+ 198   2            he=read_lcd_dat();
+ 199   2            he=read_lcd_dat();
+ 200   2            hui=read_lcd_dat();
+ 201   2            he=he^(0xff);
+ 202   2            hui=hui^(0xff);
+ 203   2            set_lcd_xy(j,i);
+ 204   2            write_lcd_dat(he);
+ 205   2            write_lcd_dat(hui);
+ 206   2          }
+ 207   1      }
+ 208          
+ 209          
+ 210          
+ 211          
+ 212          void game_over()
+ 213          {
+ 214   1        unsigned int i;
+ 215   1        clear_lcd();
+ 216   1        for(i=0;i<16;i++)
+ 217   1        {
+ 218   2          if(i<7)   write_lcd_hanzi(i,16,&sbnbjcs[i][0]);
+ 219   2          if( (i>=9) && (i<=15) )   write_lcd_hanzi(i,0,&dxqcxlg[i-9][0]);
+ 220   2        } 
+ 221   1      }
+ 222          
+ 223          
+ 224          
+ 225          
+ 226          void key_down()
+ 227          {
+ 228   1        unsigned char h;
+ 229   1        if((P2&0xfe)!=0xfe)
+ 230   1        {
+ 231   2          delay_ms(10);
+ 232   2          if ((P2&0xfe)!=0xfe) 
+ 233   2          {
+ 234   3            h=P2&0xfe;
+ 235   3            switch(h)
+ 236   3            {
+ 237   4              case 0xfc:  {
+ 238   5                      present_menu_num=menu_num[present_menu_num].confirm_num;
+ 239   5                      menu_change(present_menu_num);
+C51 COMPILER V9.56.0.0   MENU                                                              12/22/2017 14:00:41 PAGE 5   
+
+ 240   5                      break;
+ 241   5                    } // 确定键
+ 242   4        
+ 243   4              case 0xfa:  {
+ 244   5                      present_menu_num=menu_num[present_menu_num].cansel_num;
+ 245   5                      menu_change(present_menu_num);
+ 246   5                      break;
+ 247   5                    } //返回键
+ 248   4      
+ 249   4              case 0xbe:  {
+ 250   5                      present_menu_num=menu_num[present_menu_num].up_num;
+ 251   5                      menu_change(present_menu_num);
+ 252   5                      break;
+ 253   5                    } //↑
+ 254   4      
+ 255   4              case 0xee:  break;  //←
+ 256   4      
+ 257   4              case 0xde:  {
+ 258   5                      present_menu_num=menu_num[present_menu_num].down_num;
+ 259   5                      menu_change(present_menu_num);
+ 260   5                      break;
+ 261   5                    }   //↓
+ 262   4      
+ 263   4              case 0x7e:  break;  //->
+ 264   4            }
+ 265   3            while( (P2&0xfe)!=0xfe );
+ 266   3            P2=0xff;
+ 267   3            delay_ms(10);
+ 268   3          }
+ 269   2              
+ 270   2        }
+ 271   1      }
+ 272          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1291    ----
+   CONSTANT SIZE    =   1356    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1      20
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

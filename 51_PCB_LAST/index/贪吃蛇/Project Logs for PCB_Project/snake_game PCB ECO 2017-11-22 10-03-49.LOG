@@ -1,0 +1,34 @@
+Removed Pin From Net: NetName=VCC Pin=P3-2
+Removed Pin From Net: NetName=GND Pin=P4-4
+Removed Pin From Net: NetName=GND Pin=P5-2
+Removed Pin From Net: NetName=GND Pin=P7-2
+Removed Pin From Net: NetName=GND Pin=P8-2
+Removed Pin From Net: NetName=GND Pin=P10-2
+Change Component Footprint: Designator=P3 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P4 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P5 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P6 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P7 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P8 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P9 Old Footprint=HDR2X2 New Footprint=TS66H43
+Change Component Footprint: Designator=P10 Old Footprint=HDR2X2 New Footprint=TS66H43
+Added Pin To Net: NetName=VCC Pin=P3-4
+Added Pin To Net: NetName=GND Pin=P4-3
+Added Pin To Net: NetName=GND Pin=P5-4
+Added Pin To Net: NetName=GND Pin=P7-4
+Added Pin To Net: NetName=GND Pin=P8-4
+Added Pin To Net: NetName=GND Pin=P10-4
+Added Pin To Net: NetName=NetP4_2 Pin=P4-2
+Added Pin To Net: NetName=NetP4_2 Pin=U2-22
+Added Net: Name=NetP4_2
+Added Pin To Net: NetName=NetP6_4 Pin=P6-4
+Added Pin To Net: NetName=NetP6_4 Pin=U2-23
+Added Net: Name=NetP6_4
+Added Pin To Net: NetName=NetP9_4 Pin=P9-4
+Added Pin To Net: NetName=NetP9_4 Pin=U2-28
+Added Net: Name=NetP9_4
+Added Member To Class: ClassName=Sheet1 Member=Component D1 LED
+Added Member To Class: ClassName=Sheet1 Member=Component P4 Header 2X2
+Added Member To Class: ClassName=Sheet1 Member=Component P? Header 20
+Added Member To Class: ClassName=Sheet1 Member=Component Y1 XTAL
+Added Room: Name=Sheet1
